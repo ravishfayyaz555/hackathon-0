@@ -1,0 +1,23 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Environment Variables & Secrets (CRITICAL FOR HACKATHON)
+.env
+*.token
+*session_path*
+credentials.json
+*/whatsapp_session/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Obsidian Cache (Optional)
+.obsidian/workspace.json
+.obsidian/workspace
+
+# Logs
+*.log

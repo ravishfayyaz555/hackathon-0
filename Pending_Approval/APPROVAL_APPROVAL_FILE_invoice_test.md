@@ -1,0 +1,1 @@
+The AI has decided this file (APPROVAL_FILE_invoice_test.md) requires your permission to proceed. Move this to /Approved to execute.

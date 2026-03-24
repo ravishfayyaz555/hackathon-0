@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "email": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-email"],
+      "env": {
+        "GMAIL_CREDENTIALS": "c:\\Users\\Rawish\\Desktop\\Hackathon_0\\credentials.json"
+      }
+    },
+    "browser": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "env": {
+        "HEADLESS": "true"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "c:\\Users\\Rawish\\Desktop\\Hackathon_0"]
+    }
+  }
+}

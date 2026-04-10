@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital FTE | Hackathon 0 Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>H0 <span class="accent">Digital FTE</span></h1>
+            </div>
+            <div class="status-badge">
+                <span class="pulse"></span>
+                <span id="system-status">Initializing...</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Stats Card -->
+            <div class="card glass">
+                <h3>Revenue Tracker</h3>
+                <div class="metric">
+                    <span class="value" id="revenue">$0.00</span>
+                    <span class="label">MTD Revenue</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="revenue-progress" style="width: 0%"></div>
+                </div>
+                <div class="progress-label">
+                    <span id="reach-percent">0%</span> of $5,000 target
+                </div>
+            </div>
+
+            <!-- Heartbeat Card -->
+            <div class="card glass mini">
+                <h3>System Health</h3>
+                <div class="metric mini">
+                    <span class="value small" id="last-heartbeat">--:--:--</span>
+                    <span class="label">Last Heartbeat</span>
+                </div>
+                <div class="badge-tier" id="system-tier">Bronze</div>
+            </div>
+
+            <!-- Approvals Card -->
+            <div class="card glass mini">
+                <h3>Pending Actions</h3>
+                <div class="metric mini">
+                    <span class="value small" id="pending-count">0</span>
+                    <span class="label">In Queue</span>
+                </div>
+                <button class="btn-action">Review Now</button>
+            </div>
+
+            <!-- Log Card -->
+            <div class="card glass span-cols">
+                <h3>Recent Activity Log</h3>
+                <ul class="activity-list" id="activity-log">
+                    <li>System initializing...</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

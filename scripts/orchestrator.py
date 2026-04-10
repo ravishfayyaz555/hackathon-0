@@ -5,6 +5,12 @@ from pathlib import Path
 from datetime import datetime
 import os
 import threading
+from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
+import re
+import http.server
+import socketserver
+from functools import partial
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -17,6 +23,12 @@ class Orchestrator:
         self.last_heartbeat = 0
         self.loop_count = 0
         self.processes = []
+        
+        # UI & API Setup
+        self.ui_path = os.path.abspath(os.path.join(str(self.vault_path), "ui"))
+        self.app = Flask(__name__)
+        CORS(self.app)
+        self._setup_routes()
         
     def start_watchers(self):
         """Start all specialized watchers as background processes (Platinum Tier)."""
@@ -145,12 +157,70 @@ class Orchestrator:
         except Exception as e:
             logging.error(f"[PLATINUM] LinkedIn post failed: {e}")
 
+    # --- API ENDPOINTS ---
+    def _setup_routes(self):
+        @self.app.route('/api/status')
+        def get_status():
+            try:
+                content = self.dashboard.read_text(encoding='utf-8')
+                
+                # Extract Revenue
+                revenue_match = re.search(r"- \*\*Current MTD Revenue\*\*: \$([0-9,.]+)", content)
+                revenue = revenue_match.group(1) if revenue_match else "0"
+                
+                # Extract Target %
+                reach_match = re.search(r"- \*\*Target Reach %\*\*: ([0-9.]+)%", content)
+                reach = reach_match.group(1) if reach_match else "0"
+                
+                # Extract Recent Activity
+                activity = []
+                if "## 📝 Recent Activity" in content:
+                    act_part = content.split("## 📝 Recent Activity")[1].split("##")[0]
+                    activity = [line.strip("- [x] ").strip() for line in act_part.strip().splitlines() if line.strip()][:5]
+
+                return jsonify({
+                    "status": "Active (Platinum)",
+                    "tier": "Platinum",
+                    "revenue": f"${revenue}",
+                    "reach": f"{reach}%",
+                    "heartbeat": datetime.now().strftime("%H:%M:%S"),
+                    "activity": activity,
+                    "pending_approvals": len(list((self.vault_path / 'Pending_Approval').glob('*.md'))) - 1 # Minus .gitkeep
+                })
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+    def start_api_and_ui(self):
+        """Start the Flask API (8000) and UI Server (8080) in separate threads."""
+        
+        # 1. Flask API
+        def run_flask():
+            import logging as flask_logging
+            log = flask_logging.getLogger('werkzeug')
+            log.setLevel(flask_logging.ERROR)
+            self.app.run(port=8000, debug=False, use_reloader=False)
+            
+        # 2. UI Static Server
+        def run_ui():
+            os.chdir(self.ui_path)
+            handler = http.server.SimpleHTTPRequestHandler
+            with socketserver.TCPServer(("", 8080), handler) as httpd:
+                logging.info(f"[UI] Static Dashboard serving at http://localhost:8080")
+                httpd.serve_forever()
+
+        threading.Thread(target=run_flask, daemon=True).start()
+        threading.Thread(target=run_ui, daemon=True).start()
+        logging.info("[SYSTEM] Dual-server started. API: 8000 | UI: 8080")
+
     def run(self, check_interval=10):
         logging.info("Orchestrator started: PLATINUM TIER ACTIVE.")
         logging.info(f"Watching Obsidian Vault at: {self.vault_path}")
         
         # Start the external watchers
         self.start_watchers()
+        
+        # Start the UI and API
+        self.start_api_and_ui()
         
         try:
             while True:

@@ -1,0 +1,243 @@
+:root {
+    --bg-dark: #0a0b1e;
+    --accent: #00f2ff;
+    --accent-secondary: #7000ff;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Background Animations */
+.background-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    filter: blur(80px);
+}
+
+.blob {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: move 20s infinite alternate;
+}
+
+.blob-1 { background: var(--accent); top: -10%; left: -10%; }
+.blob-2 { background: var(--accent-secondary); bottom: -10%; right: -10%; animation-delay: -5s; }
+.blob-3 { background: #ff00c8; top: 40%; left: 60%; width: 300px; height: 300px; animation-delay: -10s; }
+
+@keyframes move {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(100px, 100px) scale(1.1); }
+}
+
+/* Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    animation: fadeInDown 1s ease-out;
+}
+
+.accent {
+    color: var(--accent);
+    background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Badge & Status */
+.status-badge {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+}
+
+.pulse {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.card {
+    padding: 2rem;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(15px);
+}
+
+.span-cols {
+    grid-column: span 3;
+}
+
+/* Metrics */
+.metric {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric .value {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.metric .label {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+}
+
+.value.small { font-size: 1.8rem; }
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+    box-shadow: 0 0 15px var(--accent);
+    transition: width 1s ease-in-out;
+}
+
+.progress-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Tier Badge */
+.badge-tier {
+    background: var(--accent-secondary);
+    padding: 0.3rem 0.8rem;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    width: fit-content;
+    margin-top: auto;
+}
+
+/* Activity List */
+.activity-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.activity-list li {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-list li::before {
+    content: '→';
+    color: var(--accent);
+}
+
+/* Button */
+.btn-action {
+    background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+    border: none;
+    padding: 0.8rem;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    margin-top: auto;
+}
+
+.btn-action:hover { opacity: 0.8; }
+
+/* Animations */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }

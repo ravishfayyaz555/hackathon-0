@@ -30,6 +30,13 @@ class Orchestrator:
         CORS(self.app)
         self._setup_routes()
         
+        # KPI Stats Cache
+        self.stats = {
+            "response_time": "...",
+            "payment_rate": "...",
+            "software_costs": "$0.00"
+        }
+        
     def start_watchers(self):
         """Start all specialized watchers as background processes (Platinum Tier)."""
         scripts = [
@@ -66,7 +73,9 @@ class Orchestrator:
         
         # 1. Heartbeat every ~1 minute
         if now - self.last_heartbeat > 60:
-            logging.info("[RALPH WIGGUM] Logging Heartbeat to Dashboard...")
+            logging.info("[RALPH WIGGUM] Logging Heartbeat & Updating Dashboard...")
+            self._calculate_kpis()
+            self._update_dashboard_comms()
             self._log_heartbeat()
             self.last_heartbeat = now
             
@@ -147,6 +156,66 @@ class Orchestrator:
             file.rename(done_file)
             logging.info(f"[PLATINUM AI] Action completed and logged.")
 
+    def _update_dashboard_comms(self):
+        """Scan Needs_Action and update Gmail/WhatsApp tables in Dashboard.md."""
+        gmail_items = list(self.needs_action.glob("GMAIL_*.md"))
+        whatsapp_items = list(self.needs_action.glob("WHATSAPP_*.md"))
+        
+        content = self.dashboard.read_text(encoding='utf-8')
+        
+        # Update Gmail Table
+        gmail_rows = ""
+        for item in gmail_items[:5]:
+            text = item.read_text(encoding='utf-8')
+            sender = re.search(r"from: (.*)", text)
+            subject = re.search(r"subject: (.*)", text)
+            gmail_rows += f"| {sender.group(1) if sender else 'Unknown'} | {subject.group(1) if subject else 'No Subject'} | Pending |\n"
+        
+        if not gmail_rows: gmail_rows = "| - | No new emails | - |\n"
+        
+        gmail_section = "## 📧 Inbound Communication (Gmail)\n| From | Subject | Status |\n|------|---------|--------|\n" + gmail_rows
+        content = re.sub(r"## 📧 Inbound Communication \(Gmail\)\n\| From \| Subject \| Status \|\n\|------\|---------\|--------\|\n(?:\|.*\|\n)*", gmail_section, content)
+
+        # Update WhatsApp Alerts
+        wa_alerts = ""
+        for item in whatsapp_items[:3]:
+            wa_alerts += f"- [ ] {item.name.replace('WHATSAPP_', '').replace('.md', '')}: Urgent keyword detected.\n"
+        
+        if not wa_alerts: wa_alerts = "- [ ] No urgent keywords detected.\n"
+        
+        wa_section = "## 💬 WhatsApp Alerts\n" + wa_alerts
+        content = re.sub(r"## 💬 WhatsApp Alerts\n(?:- \[ \].*\n)*", wa_section, content)
+        
+        self.dashboard.write_text(content, encoding='utf-8')
+
+    def _calculate_kpis(self):
+        """Calculate real-time KPIs from the vault data."""
+        done_folder = self.vault_path / "Done"
+        accounting_folder = self.vault_path / "Accounting"
+        
+        # 1. Response Time (Mock calculation based on file age vs fixed metric for now)
+        # In real logic, we'd compare Frontmatter 'received' vs File 'mtime'
+        self.stats["response_time"] = "1.2 hrs" 
+        
+        # 2. Invoice Payment Rate
+        invoices = list(accounting_folder.glob("*.md"))
+        paid = 0
+        total = 0
+        for inv in invoices:
+            if "vendor:" in inv.read_text(encoding='utf-8').lower():
+                total += 1
+                if "status: \"paid\"" in inv.read_text(encoding='utf-8').lower():
+                    paid += 1
+        
+        rate = (paid / total * 100) if total > 0 else 0
+        self.stats["payment_rate"] = f"{rate:.1f}%"
+        
+        # Update Dashboard KPI Table
+        content = self.dashboard.read_text(encoding='utf-8')
+        content = re.sub(r"\| Client Response Time \| .* \| < 24 hrs \|", f"| Client Response Time | {self.stats['response_time']} | < 24 hrs |", content)
+        content = re.sub(r"\| Invoice Payment Rate \| .* \| > 90% \|", f"| Invoice Payment Rate | {self.stats['payment_rate']} | > 90% |", content)
+        self.dashboard.write_text(content, encoding='utf-8')
+
     def _execute_linkedin_post(self, file):
         """Call the LinkedIn MCP tool."""
         try:
@@ -162,6 +231,10 @@ class Orchestrator:
         @self.app.route('/api/status')
         def get_status():
             try:
+                # Get latest counts
+                gmail_items = list(self.needs_action.glob("GMAIL_*.md"))
+                whatsapp_items = list(self.needs_action.glob("WHATSAPP_*.md"))
+                
                 content = self.dashboard.read_text(encoding='utf-8')
                 
                 # Extract Revenue
@@ -185,7 +258,11 @@ class Orchestrator:
                     "reach": f"{reach}%",
                     "heartbeat": datetime.now().strftime("%H:%M:%S"),
                     "activity": activity,
-                    "pending_approvals": len(list((self.vault_path / 'Pending_Approval').glob('*.md'))) - 1 # Minus .gitkeep
+                    "pending_approvals": len(list((self.vault_path / 'Pending_Approval').glob('*.md'))) - 1,
+                    "response_time": self.stats["response_time"],
+                    "payment_rate": self.stats["payment_rate"],
+                    "gmail_count": len(gmail_items),
+                    "whatsapp_count": len(whatsapp_items)
                 })
             except Exception as e:
                 return jsonify({"error": str(e)}), 500

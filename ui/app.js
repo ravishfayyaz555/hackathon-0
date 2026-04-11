@@ -27,6 +27,10 @@ async function updateDashboard() {
         // Update Pending Actions
         document.getElementById('pending-count').innerText = data.pending_approvals;
 
+        // Update KPIs
+        document.getElementById('response-time').innerText = data.response_time;
+        document.getElementById('payment-rate').innerText = data.payment_rate;
+
         // Update Activity Log
         const logContainer = document.getElementById('activity-log');
         logContainer.innerHTML = '';

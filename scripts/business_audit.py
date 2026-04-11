@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 import logging
+import re
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -43,7 +44,7 @@ class BusinessAudit:
                             pass
                 
                 # Distinguish between revenue and cost
-                if "type: software_cost" in lower_content or "software" in lower_content:
+                if "type: \"software_cost\"" in lower_content or "software" in lower_content:
                     total_costs += amount
                 else:
                     total_revenue += amount
@@ -87,24 +88,42 @@ class BusinessAudit:
             
         content = self.dashboard_file.read_text(encoding='utf-8')
         
-        # Update Revenue
+        # 1. Update Financial Summary
         revenue_line = f"- **Current MTD Revenue**: ${total_revenue:,.2f}"
         target_reach = (total_revenue / 5000) * 100
         reach_line = f"- **Target Reach %**: {target_reach:.1f}%"
-        
-        # Update KPI Costs
-        cost_status = f"${total_costs:,.2f}"
-        
-        # Replace placeholders using re
-        import re
         content = re.sub(r"- \*\*Current MTD Revenue\*\*: .*", revenue_line, content)
         content = re.sub(r"- \*\*Target Reach %\*\*: .*", reach_line, content)
         
-        # Update Software Costs in table
-        content = re.sub(r"\| Software Costs \| .* \| < \$200 \|", f"| Software Costs | {cost_status} | < $200 |", content)
+        # 2. Update KPI Costs in table
+        content = re.sub(r"\| Software Costs \| .* \| < \$200 \|", f"| Software Costs | ${total_costs:,.2f} | < $200 |", content)
         
+        # 3. Detect Cost Increases (Audit Rules)
+        vendor_costs = {}
+        for file in self.accounting_dir.glob("*.md"):
+            c = file.read_text(encoding='utf-8')
+            v_match = re.search(r"vendor: \"(.*)\"", c)
+            a_match = re.search(r"amount: (.*)", c)
+            if v_match and a_match:
+                v = v_match.group(1)
+                a = float(a_match.group(1))
+                if v not in vendor_costs: vendor_costs[v] = []
+                vendor_costs[v].append(a)
+        
+        alerts = ""
+        for v, prices in vendor_costs.items():
+            if len(prices) >= 2:
+                increase = ((prices[-1] - prices[-2]) / prices[-2]) * 100
+                if increase > 20:
+                    alerts += f"- [x] {v} cost increased by {increase:.1f}%! (Alert triggered)\n"
+        
+        if alerts:
+            content = re.sub(r"## 🕵️ Subscription Audit Rules\n(?:- \[ \].*\n)*", f"## 🕵️ Subscription Audit Rules\n{alerts}", content)
+        else:
+            content = re.sub(r"## 🕵️ Subscription Audit Rules\n(?:- \[ \].*\n)*", f"## 🕵️ Subscription Audit Rules\n- [ ] No major cost increases detected.\n", content)
+
         self.dashboard_file.write_text(content, encoding='utf-8')
-        logger.info("Updated Dashboard.md with latest financial metrics and KPIs.")
+        logger.info("Updated Dashboard.md with latest financial metrics and audit alerts.")
 
     def _extract_recent_activity(self, content):
         lines = content.splitlines()
